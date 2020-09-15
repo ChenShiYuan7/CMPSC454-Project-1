@@ -60,6 +60,26 @@ function outarray = apply_maxpool(inarray)
         end
     end
 end
+
+function outarray = apply_softmax(inarray)
+    
+%   find alpha
+    alpha = max(inarray);
+    sum = 0;
+    
+%   calculate denominator part
+    for i = 1:len(inarray)
+        a = exp(inarray(:,:,i)) - alpha;
+        sum = sum + a;
+    end
+    
+%   calculate numerator part and get softmax for each k
+    for i = 1:len(inarray)
+        b = exp(inarray(:,:,i)) - alpha;
+        inarray(:,:,i) = b/sum;
+    end
+    outarray = inarray;
+end
 % outarray = apply_convolve(inarray, filterbank, biasvals)
 % 
 % inarray is NxMxD1, filterbank is RxCxD1xD2,
