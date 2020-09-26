@@ -1,6 +1,17 @@
 cifar10 = load('.\Project1DataFiles\cifar10testdata.mat');
 debuggingTest = load('.\Project1DataFiles\debuggingTest.mat');
 CNNparameters = load('.\Project1DataFiles\CNNparameters.mat');
+for d = 1:length(CNNparameters.layertypes)
+    fprintf('layer %d is of type %s\n',d,CNNparameters.layertypes{d});
+    filterbank = CNNparameters.filterbanks{d};
+    if not(isempty(filterbank))
+        fprintf('filterbank size %d x %d x %d x %d\n', ...
+        size(filterbank,1),size(filterbank,2), ...
+        size(filterbank,3),size(filterbank,4));
+        biasvec = CNNparameters.biasvectors{d};
+        fprintf('number of biases is %d\n',length(biasvec));
+    end
+end
 
 % test code:
 figure; imagesc(debuggingTest.imrgb); truesize(gcf,[64 64]);
@@ -11,41 +22,37 @@ inarray = debuggingTest.imrgb;
 outarray = apply_imnormalize (inarray);
 layer = 1;
 result1 = debuggingTest.layerResults{layer};
-isequal( outarray, result1)
+fprintf('layer %d is %d\n',layer, isequal( outarray, debuggingTest.layerResults{layer}));
 % do layer 2 to 16 in a loop, with filter bank and vias starting at 2
-filterLayer = 2;
 for repeat = 1:3
     
-    outarray = apply_convolve(outarray, CNNparameters.filterbanks{filterLayer}, CNNparameters.biasvectors{filterLayer});
-    filterLayer = filterLayer + 2;
-    result1 = debuggingTest.layerResults{layer};
-    isequal( outarray, result1)
     layer = layer + 1;
+    outarray = apply_convolve(outarray, CNNparameters.filterbanks{layer}, CNNparameters.biasvectors{layer});
+    fprintf('layer %d is %d\n',layer, isequal( outarray, debuggingTest.layerResults{layer}));
     
+    layer = layer + 1;
     outarray = apply_relu(outarray);
-    result1 = debuggingTest.layerResults{layer};
-    isequal( outarray, result1)
-    layer = layer + 1;
+    fprintf('layer %d is %d\n',layer, isequal( outarray, debuggingTest.layerResults{layer}));
     
-    outarray = apply_convolve(outarray, CNNparameters.filterbanks{filterLayer}, CNNparameters.biasvectors{filterLayer});
-    filterLayer = filterLayer + 2;
-    result1 = debuggingTest.layerResults{layer};
-    isequal( outarray, result1)
-    layer = layer + 1;
     
+    layer = layer + 1;
+    outarray = apply_convolve(outarray, CNNparameters.filterbanks{layer}, CNNparameters.biasvectors{layer});
+    fprintf('layer %d is %d\n',layer, isequal( outarray, debuggingTest.layerResults{layer}));
+    
+    layer = layer + 1;
     outarray = apply_relu(outarray);
-    result1 = debuggingTest.layerResults{layer};
-    isequal( outarray, result1)
-    layer = layer + 1;
+    fprintf('layer %d is %d\n',layer, isequal( outarray, debuggingTest.layerResults{layer}));
     
+    layer = layer + 1;
     outarray = apply_maxpool(outarray);
-    result1 = debuggingTest.layerResults{layer};
-    isequal( outarray, result1)
-    layer = layer + 1;
+    fprintf('layer %d is %d\n',layer, isequal( outarray, debuggingTest.layerResults{layer}));
+   
 end
-% outarray = apply_fullconnect(outarray, filterbank, biasvals);
-% outarray = apply_softmax(outarray, filterbank, biasvals);
-
+outarray = apply_fullconnect(debuggingTest.layerResults{16}, CNNparameters.filterbanks{17}, CNNparameters.biasvectors{17});
+fprintf('layer %d is %d\n',layer, isequal( outarray, debuggingTest.layerResults{17}));
+% outarray = apply_softmax(outarray, CNNparameters.filterbanks{layer}, CNNparameters.biasvectors{layer});
+% fprintf('layer %d is %d\n',layer, isequal( outarray, debuggingTest.layerResults{layer}));
+% end of test code
 
 % for classindex = 1:10
 %     %get indices of all images of that class
@@ -57,17 +64,6 @@ end
 %     title(sprintf('\%s',cifar10.classlabels{classindex}));
 % end
 
-% for d = 1:length(CNNparameters.layertypes)
-%     fprintf('layer %d is of type %s\n',d,CNNparameters.layertypes{d});
-%     filterbank = CNNparameters.filterbanks{d};
-%     if not(isempty(filterbank))
-%         fprintf('filterbank size %d x %d x %d x %d\n', ...
-%         size(filterbank,1),size(filterbank,2), ...
-%         size(filterbank,3),size(filterbank,4));
-%         biasvec = CNNparameters.biasvectors{d};
-%         fprintf('number of biases is %d\n',length(biasvec));
-%     end
-% end
 
 %sample code to show image and access expected results
 % figure; imagesc(imrgb); truesize(gcf,[64 64]);
@@ -100,6 +96,7 @@ function outarray = apply_maxpool(inarray)
     [n,m,d] = size(inarray);
     %make a stub outarray for now, we will give it real value later
     outarray = ones(n/2,m/2,d);
+    outarray = double(outarray);
     for k = 1:d
         for i = 1:2:n
             for j = 1:2:m
@@ -112,14 +109,26 @@ end
 function outarray = apply_convolve(inarray, filterbank, biasvals)
     % get size of filterbank and inarray, create outarray
     inarray = double(inarray);
+    if (isempty(filterbank))
+        fprintf('Convolve error, no filter bank');
+        return
+    end
     [R,C,D1,D2] = size(filterbank);
-    [N,M,D] = size(inarray);
-    outarray = ones(N,M,D2);
+    [N,M,D] = size(inarray); %D1 and D should be equal
+    if D1 ~= D
+        fprintf('Convolve error, Dimension not equal D1:%d D:%d\n',D1,D);
+        return
+    end
+    outarray = double(ones(N,M,D2));
     % do convolution D2 times, which D2 is how many filter we have in the
     % fiterbank
     for filterNumber = 1:D2
-        outarray(:,:,filterNumber) = imfilter(inarray, filterbank(:,:,:,filterNumber),'same','conv',0);
-        outarray(:,:,filterNumber) = outarray(:,:,filterNumber) + biasvals(filterNumber);
+        sumOfAllChannel = 0;
+        for channel = 1:D1
+            temp = imfilter(inarray(:,:,channel), filterbank(:,:,channel,filterNumber),'same','conv',0);
+            sumOfAllChannel = sumOfAllChannel + temp;
+        end
+        outarray(:,:,filterNumber) = sumOfAllChannel + biasvals(filterNumber);
     end
       
 end
