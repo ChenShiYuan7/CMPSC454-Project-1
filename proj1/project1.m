@@ -21,35 +21,40 @@ figure; imagesc(debuggingTest.imrgb); truesize(gcf,[64 64]);
 inarray = debuggingTest.imrgb;
 outarray = apply_imnormalize (inarray);
 layer = 1;
-result1 = debuggingTest.layerResults{layer};
+result1 = debuggingTest.layerResults{1,1};
 fprintf('layer %d is %d\n',layer, isequal( outarray, debuggingTest.layerResults{layer}));
 % do layer 2 to 16 in a loop, with filter bank and vias starting at 2
 for repeat = 1:3
     
     layer = layer + 1;
     outarray = apply_convolve(outarray, CNNparameters.filterbanks{layer}, CNNparameters.biasvectors{layer});
-    fprintf('layer %d is %d\n',layer, isequal( outarray, debuggingTest.layerResults{layer}));
-    
+    outarray = round(outarray,10);
+    fprintf('layer %d is %d\n',layer, isequal( outarray, round(debuggingTest.layerResults{layer},10)));
+
     layer = layer + 1;
     outarray = apply_relu(outarray);
-    fprintf('layer %d is %d\n',layer, isequal( outarray, debuggingTest.layerResults{layer}));
+   outarray = round(outarray,10);
+    fprintf('layer %d is %d\n',layer, isequal( outarray, round(debuggingTest.layerResults{layer},10)));
     
     
     layer = layer + 1;
     outarray = apply_convolve(outarray, CNNparameters.filterbanks{layer}, CNNparameters.biasvectors{layer});
-    fprintf('layer %d is %d\n',layer, isequal( outarray, debuggingTest.layerResults{layer}));
+    outarray = round(outarray,10);
+    fprintf('layer %d is %d\n',layer, isequal( outarray, round(debuggingTest.layerResults{layer},10)));
     
     layer = layer + 1;
     outarray = apply_relu(outarray);
-    fprintf('layer %d is %d\n',layer, isequal( outarray, debuggingTest.layerResults{layer}));
+    outarray = round(outarray,10);
+    fprintf('layer %d is %d\n',layer, isequal( outarray, round(debuggingTest.layerResults{layer},10)));
     
     layer = layer + 1;
     outarray = apply_maxpool(outarray);
-    fprintf('layer %d is %d\n',layer, isequal( outarray, debuggingTest.layerResults{layer}));
+    outarray = round(outarray,10);
+    fprintf('layer %d is %d\n',layer, isequal( outarray, round(debuggingTest.layerResults{layer},10)));
    
 end
-outarray = apply_fullconnect(debuggingTest.layerResults{16}, CNNparameters.filterbanks{17}, CNNparameters.biasvectors{17});
-fprintf('layer %d is %d\n',layer, isequal( outarray, debuggingTest.layerResults{17}));
+% outarray = apply_fullconnect(debuggingTest.layerResults{16}, CNNparameters.filterbanks{17}, CNNparameters.biasvectors{17});
+% fprintf('layer %d is %d\n',layer, isequal( outarray, debuggingTest.layerResults{17}));
 % outarray = apply_softmax(outarray, CNNparameters.filterbanks{layer}, CNNparameters.biasvectors{layer});
 % fprintf('layer %d is %d\n',layer, isequal( outarray, debuggingTest.layerResults{layer}));
 % end of test code
@@ -108,29 +113,37 @@ end
 
 function outarray = apply_convolve(inarray, filterbank, biasvals)
     % get size of filterbank and inarray, create outarray
-    inarray = double(inarray);
     if (isempty(filterbank))
-        fprintf('Convolve error, no filter bank');
+        fprintf('error, no filter bank');
         return
     end
     [R,C,D1,D2] = size(filterbank);
     [N,M,D] = size(inarray); %D1 and D should be equal
     if D1 ~= D
-        fprintf('Convolve error, Dimension not equal D1:%d D:%d\n',D1,D);
+        fprintf('error, Dimension not equal D1:%d D:%d\n',D1,D);
         return
     end
-    outarray = double(ones(N,M,D2));
+    outarray = double(zeros(N,M,D2));
     % do convolution D2 times, which D2 is how many filter we have in the
     % fiterbank
-    for filterNumber = 1:D2
-        sumOfAllChannel = 0;
-        for channel = 1:D1
-            temp = imfilter(inarray(:,:,channel), filterbank(:,:,channel,filterNumber),'same','conv',0);
+    
+    for filterNumber = 1:size(filterbank,4)
+        filter = filterbank(:,:,:,filterNumber);
+        sumOfAllChannel = zeros(N,M);
+        for channel = 1:size(filterbank,3)
+            temp = (imfilter(inarray(:,:,channel),filter(:,:,channel),0, 'conv','same'));
             sumOfAllChannel = sumOfAllChannel + temp;
         end
-        outarray(:,:,filterNumber) = sumOfAllChannel + biasvals(filterNumber);
+        outarray(:,:,filterNumber) = double(sumOfAllChannel + double(biasvals(filterNumber)));
+       
+        if size(outarray,1) ~= N
+            fprintf('error, Dimension not equal N:%d outarray N:%d\n',N,size(outarray,1));
+        end
+        if size(outarray,2) ~= M
+            fprintf('error, Dimension not equal M:%d outarray M:%d\n',M,size(outarray,2));
+        end
     end
-      
+      outarray = double(outarray);
 end
 
 function outarray = apply_fullconnect(inarray, filterbank, biasvals)
