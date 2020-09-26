@@ -9,8 +9,10 @@ function outarray = apply_fullconnect(inarray, filterbank, biasvals)
         %calculate the forth dimension of filtetbank
         fl = filterbank(:,:,:,i);
         
+        product = dot(inarray,fl);
+        
         %get the sum of dot profuct for fl and input
-        sums = sum(dot(fl,inarray));
+        sums = sum(product(:));
         
         %get the value which include the bias 
         outarray(:,:,i) = sums + biasvals(i);
