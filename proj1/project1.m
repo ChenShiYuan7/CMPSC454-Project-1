@@ -27,44 +27,43 @@ fprintf('layer %d is %d\n',layer, isequal( outarray, debuggingTest.layerResults{
 for repeat = 1:3
     
     layer = layer + 1;
-    outarray = apply_convolve(outarray, CNNparameters.filterbanks{layer}, CNNparameters.biasvectors{layer});
+    outarray = apply_convolve(debuggingTest.layerResults{layer-1}, CNNparameters.filterbanks{layer}, CNNparameters.biasvectors{layer});
     outarray = round(outarray,10);
     fprintf('layer %d is %d\n',layer, isequal( outarray, round(debuggingTest.layerResults{layer},10)));
-
-    layer = layer + 1;
-    outarray = apply_relu(outarray);
-   outarray = round(outarray,10);
-    fprintf('layer %d is %d\n',layer, isequal( outarray, round(debuggingTest.layerResults{layer},10)));
-    
-    
-    layer = layer + 1;
-    outarray = apply_convolve(outarray, CNNparameters.filterbanks{layer}, CNNparameters.biasvectors{layer});
-    outarray = round(outarray,10);
-    fprintf('layer %d is %d\n',layer, isequal( outarray, round(debuggingTest.layerResults{layer},10)));
+%     fprintf('layer %d is %d\n',layer, isequal( outarray, debuggingTest.layerResults{layer}));
     
     layer = layer + 1;
     outarray = apply_relu(outarray);
+    fprintf('layer %d is %d\n',layer, isequal( outarray, round(debuggingTest.layerResults{layer},10)));
+    
+    layer = layer + 1;
+    outarray = apply_convolve(debuggingTest.layerResults{layer-1}, CNNparameters.filterbanks{layer}, CNNparameters.biasvectors{layer});
     outarray = round(outarray,10);
     fprintf('layer %d is %d\n',layer, isequal( outarray, round(debuggingTest.layerResults{layer},10)));
     
     layer = layer + 1;
-    outarray = apply_maxpool(outarray);
+    outarray = apply_relu(outarray);
     outarray = round(outarray,10);
     fprintf('layer %d is %d\n',layer, isequal( outarray, round(debuggingTest.layerResults{layer},10)));
-   
+    
+    layer = layer + 1;
+    outarray = apply_maxpool(debuggingTest.layerResults{layer-1});
+    outarray = round(outarray,10);
+    fprintf('layer %d is %d\n',layer, isequal( outarray, round(debuggingTest.layerResults{layer},10)));
+    compare = round(debuggingTest.layerResults{layer},10);
 end
-% outarray = apply_fullconnect(debuggingTest.layerResults{16}, CNNparameters.filterbanks{17}, CNNparameters.biasvectors{17});
-% fprintf('layer %d is %d\n',layer, isequal( outarray, debuggingTest.layerResults{17}));
-% outarray = apply_softmax(outarray, CNNparameters.filterbanks{layer}, CNNparameters.biasvectors{layer});
-% fprintf('layer %d is %d\n',layer, isequal( outarray, debuggingTest.layerResults{layer}));
+outarray = apply_fullconnect(debuggingTest.layerResults{16}, CNNparameters.filterbanks{17}, CNNparameters.biasvectors{17});
+fprintf('layer 17 is %d\n', isequal( outarray, debuggingTest.layerResults{17}));
+outarray = apply_softmax(debuggingTest.layerResults{17});
+fprintf('layer 18 is %d\n', isequal( outarray, debuggingTest.layerResults{18}));
 % end of test code
 
 % for classindex = 1:10
-%     %get indices of all images of that class
+%     get indices of all images of that class
 %     inds = find(cifar10.trueclass==classindex);
-%     %take first one
+%     take first one
 %     imrgb = cifar10.imageset(:,:,:,inds(1));
-%     %display it along with ground truth text label
+%     display it along with ground truth text label
 %     figure; imagesc(imrgb); truesize(gcf,[64 64]);
 %     title(sprintf('\%s',cifar10.classlabels{classindex}));
 % end
@@ -105,7 +104,7 @@ function outarray = apply_maxpool(inarray)
     for k = 1:d
         for i = 1:2:n
             for j = 1:2:m
-            outarray((i+1)/2,((j+1)/2),k) = max(max(inarray(i:i+1, j:j+1)));
+            outarray((i+1)/2,((j+1)/2),k) = max(max(inarray(i:i+1, j:j+1, k)));
             end
         end
     end
@@ -147,6 +146,21 @@ function outarray = apply_convolve(inarray, filterbank, biasvals)
 end
 
 function outarray = apply_fullconnect(inarray, filterbank, biasvals)
+    
+  outSize = [1, 1, 1];
+  outSize(3) = size(filterbank, 4);
+  outarray = zeros(outSize);
+ 
+  for l = 1:size(filterbank, 4)
+    for i = 1:size(inarray, 1)
+      for j = 1:size(inarray, 2)
+        for k = 1:size(inarray, 3)
+          outarray(1, 1, l) = outarray(1, 1, l) + inarray(i, j, k) * filterbank(i, j, k, l);
+        end
+      end
+    end
+    outarray(1, 1, l) = outarray(1, 1, l) + biasvals(l);   
+  end
 
 end
 
@@ -157,13 +171,13 @@ function outarray = apply_softmax(inarray)
     sum = 0;
     
 %   calculate denominator part
-    for i = 1:len(inarray)
+    for i = 1:length(inarray)
         a = exp(inarray(:,:,i)) - alpha;
         sum = sum + a;
     end
     
 %   calculate numerator part and get softmax for each k
-    for i = 1:len(inarray)
+    for i = 1:length(inarray)
         b = exp(inarray(:,:,i)) - alpha;
         inarray(:,:,i) = b/sum;
     end
