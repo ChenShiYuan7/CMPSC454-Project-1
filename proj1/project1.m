@@ -147,8 +147,7 @@ end
 
 function outarray = apply_fullconnect(inarray, filterbank, biasvals)
     
-  outSize = [1, 1, 1];
-  outSize(3) = size(filterbank, 4);
+  outSize = [1, 1, size(filterbank, 4)];
   outarray = zeros(outSize);
  
   for l = 1:size(filterbank, 4)
@@ -166,20 +165,19 @@ end
 
 function outarray = apply_softmax(inarray)
     inarray = double(inarray);
-%   find alpha
+%   find alpha, which is just max element
     alpha = max(inarray);
-    sum = 0;
-    
+    denominator = 0;
+    outarray = zeros(size(inarray));
 %   calculate denominator part
-    for i = 1:length(inarray)
-        a = exp(inarray(:,:,i)) - alpha;
-        sum = sum + a;
+    for i = 1:size(inarray,3)
+        temp = exp(inarray(:,:,i) - alpha);
+        denominator = denominator + temp;
     end
     
-%   calculate numerator part and get softmax for each k
-    for i = 1:length(inarray)
-        b = exp(inarray(:,:,i)) - alpha;
-        inarray(:,:,i) = b/sum;
+%   calculate numerator part and get softmax for each element
+    for i = 1:size(inarray,3)
+        numerator = exp(inarray(:,:,i) - alpha);
+        outarray(:,:,i) = numerator/denominator;
     end
-    outarray = inarray;
 end

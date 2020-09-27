@@ -1,7 +1,7 @@
+
 function outarray = apply_fullconnect(inarray, filterbank, biasvals)
     
-  outSize = [1, 1, 1];
-  outSize(3) = size(filterbank, 4);
+  outSize = [1, 1, size(filterbank, 4)];
   outarray = zeros(outSize);
  
   for l = 1:size(filterbank, 4)
