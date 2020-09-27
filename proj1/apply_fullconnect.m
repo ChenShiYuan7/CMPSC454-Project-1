@@ -1,29 +1,18 @@
 function outarray = apply_fullconnect(inarray, filterbank, biasvals)
     
-    %transfer value to the double first
-    inarray = double(inarray);
-    outarray = zeros(1,1,10,'double');
-    
-    %make a 1*1*10 image matrix 
-    for i = 1:10
-        %calculate the forth dimension of filtetbank
-        fl = filterbank(:,:,:,i);
-        
-        product = dot(inarray,fl);
-        
-        %get the sum of dot profuct for fl and input
-        sums = sum(product(:));
-        
-        %get the value which include the bias 
-        outarray(:,:,i) = sums + biasvals(i);
-        
+  outSize = [1, 1, 1];
+  outSize(3) = size(filterbank, 4);
+  outarray = zeros(outSize);
+ 
+  for l = 1:size(filterbank, 4)
+    for i = 1:size(inarray, 1)
+      for j = 1:size(inarray, 2)
+        for k = 1:size(inarray, 3)
+          outarray(1, 1, l) = outarray(1, 1, l) + inarray(i, j, k) * filterbank(i, j, k, l);
+        end
+      end
     end
-    
-    
-    
- end
-        
-        
-        
-        
-        
+    outarray(1, 1, l) = outarray(1, 1, l) + biasvals(l);   
+  end
+
+end
