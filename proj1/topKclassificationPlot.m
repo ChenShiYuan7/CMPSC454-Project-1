@@ -1,5 +1,7 @@
 % this matrix is generated from our main routine, we use it to generate the
-% top k plot.
+% top k plot, for k>1.
+% top k = 1 plot we can just directly take diagonal values/1000 to get
+% accurarcy rate.
 cifar10 = load('.\Project1DataFiles\cifar10testdata.mat');
 ConfusionMatrix = [     531    41    65    37    10     8    18    38   210    42;
                         40   519     9    26    10     7    19    29   111   230;
@@ -15,12 +17,6 @@ ConfusionMatrix = [     531    41    65    37    10     8    18    38   210    4
 label = categorical(cifar10.classlabels);
 
 K = 3;
-plot = topKaccuracyPlot(ConfusionMatrix, K)
-title = strcat('TopK= ',num2str(K));
-title = strcat(title, ' Classification Accuracy Graph');
-figure('name',title); bar(label,plot);
-
-K = 1;
 plot = topKaccuracyPlot(ConfusionMatrix, K)
 title = strcat('TopK= ',num2str(K));
 title = strcat(title, ' Classification Accuracy Graph');

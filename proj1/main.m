@@ -1,5 +1,6 @@
 %this file generates the confusion matrix, and calculates the accuracy of
-%our CNN
+%our CNN, and generates Top k=1 graph. Takes more than 20 mins to run on my
+%computer 
 cifar10 = load('.\Project1DataFiles\cifar10testdata.mat');
 ConfusionMatrix = zeros(10,10);
 
@@ -21,12 +22,15 @@ end
 %caculate accuracy using provided formula in pdf
 numerator = 0;
 denominator = sum(ConfusionMatrix, 'all');
+accuracy = zeros(1,10);
 for groundTruthClass = 1:10
     numerator = numerator + ConfusionMatrix(groundTruthClass,groundTruthClass);
+    accuracy(groundTruthClass) = ConfusionMatrix(groundTruthClass,groundTruthClass) / sum(ConfusionMatrix(groundTruthClass,:));
 end
 accuracy = double(numerator) / double (denominator);
 fprintf('Accuracy of our program is %d\n', accuracy);
 disp(ConfusionMatrix);
+figure('name','K=1 ClassificationAccuracy Chart');bar(categorical(cifar10.classlabels), accuracy);
 
 
 function outarray = apply_cnn(inarray)
