@@ -1,4 +1,5 @@
-
+%this file generates the confusion matrix, and calculates the accuracy of
+%our CNN
 cifar10 = load('.\Project1DataFiles\cifar10testdata.mat');
 ConfusionMatrix = zeros(10,10);
 
