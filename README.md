@@ -37,8 +37,6 @@ This project runs with MATLAB
 
 Just Download and Open
 
-```
-
 ## Usage example
 
 Our model contains many key components of a CNN, convolution layer, fully connected layer, activation functions, and many more.
