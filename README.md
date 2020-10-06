@@ -51,9 +51,6 @@ Zekun Peng
 
 Zhenghan Fang     – [GitHub Link](https://github.com/ReLRail/)
 
-
-Distributed under the MIT license. See ``LICENSE`` for more information.
-
 ## Contributing
 
 1. Fork it (<https://github.com/ChenShiYuan7/CMPSC454-Project-1/fork>)
